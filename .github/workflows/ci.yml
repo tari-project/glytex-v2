@@ -24,7 +24,7 @@ jobs:
     name: ci-all
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: install dependencies (linux)
         run: |
@@ -78,7 +78,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: install dependencies (linux)
         if: startsWith(runner.os,'Linux')
