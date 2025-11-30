@@ -1,0 +1,45 @@
+name: docker build
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  docker-build:
+    name: docker build
+    strategy:
+      matrix:
+        gpu-platform: [rocm, cuda]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set SHA_SHORT for commit
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: "build target: graxil-cuda"
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.${{ matrix.gpu-platform }}
+          push: false
+          tags: graxil-${{ matrix.gpu-platform }}:${{ steps.vars.outputs.sha_short }}
+          # NOTE(canardleteer): Since we don't really push or publish this (or
+          #                     do multi-layer builds), we don't enable these
+          #                     extra steps that are more useful once that's the
+          #                     case.
+          # provenance: mode=max
+          # sbom: true
+          # load: true
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
+
+      # NOTE(canardleteer): Unfortunately, there are no GPU runners available
+      #                     with GitHub actions to test anything more than a
+      #                     successful build process.

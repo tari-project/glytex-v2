@@ -30,6 +30,8 @@ cargo build --release --features gpu
 cargo build --release --features hybrid
 ```
 
+- Docker images (CUDA & ROCm) can be built as well, via [these instructions](./docker/README.md).
+
 ## ⚠️ Important Notes
 
 - **Hybrid Feature**: Currently WIP - it builds but runs either GPU OR CPU mining, not both simultaneously

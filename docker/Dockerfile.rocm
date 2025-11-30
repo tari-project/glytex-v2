@@ -1,0 +1,62 @@
+# The ROCm version matters to some degree, and must at least work with the
+# driver used on the container host.
+ARG BASE_ROCM_DEV_CONTAINER=rocm/dev-ubuntu-24.04:7.1.1
+ARG BASE_ROCM_RUN_CONTAINER=rocm/dev-ubuntu-24.04:7.1.1
+
+# `release` or `debug`
+ARG RUST_TARGET_TYPE="release"
+
+FROM $BASE_ROCM_DEV_CONTAINER AS build
+ARG RUST_TARGET_TYPE
+
+# Install required Ubuntu packages
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && \
+    apt install -y --no-install-recommends rocm-opencl-dev curl && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -ms /bin/bash graxil
+USER graxil
+WORKDIR /home/graxil
+
+# Grab the "latest" Rust.
+#
+# NOTE(canardleteer): I'm a little confused by the `rust-toolchain` file in this
+#                     repo, AFAIK, it's similar to the `cargo` supported
+#                     `rust-toolchain.toml` file, but I'm not attempting to
+#                     capture changes to the CI build system in this PR.
+ADD --chmod=755 https://sh.rustup.rs /home/graxil/rustup.sh
+RUN ./rustup.sh -y
+ENV PATH="/home/graxil/.cargo/bin:${PATH}"
+
+# Cache dependency changes first.
+COPY Cargo.toml Cargo.lock ./
+RUN cargo fetch
+
+# Then cache whatever else is required via an include.
+COPY src ./src
+COPY kernels ./kernels
+COPY ./log4rs_sample.yml ./
+
+RUN cargo build --$RUST_TARGET_TYPE
+
+FROM $BASE_ROCM_RUN_CONTAINER AS runtime
+
+ARG RUST_TARGET_TYPE
+
+RUN apt update && \
+    apt install -y --no-install-recommends rocm-opencl-runtime clinfo && \
+    rm -rf /var/lib/apt/lists/*
+
+###############################################################################
+# FIXME(canardleteer): The ROCm user/group story to run unprivileged isn't all
+#                      that well scaffolded out. We will just run as root for
+#                      now.
+#
+# RUN useradd -ms /bin/bash graxil && sudo usermod -a -G video,render graxil
+# USER graxil
+###############################################################################
+WORKDIR /home/graxil
+
+COPY --from=build /home/graxil/target/$RUST_TARGET_TYPE/graxil /home/graxil/target/$RUST_TARGET_TYPE/gpu_test ./
+ENTRYPOINT [ "./graxil" ]
