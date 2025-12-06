@@ -10,7 +10,7 @@ High-performance GPU miner for SHA3x (Tari) - delivering 385+ MH/s on RTX 4060 T
 ### Quick Start - GPU Mining
 
 ```bash
-cargo run --release --features gpu --bin sha3x-miner -- \
+cargo run --release --features gpu --bin graxil -- \
   --algo sha3x \
   --pool pool.sha3x.supportxtm.com:6118 \
   --wallet 125ohcEDcG8sL4DcdtqZ6YLbSgVYFJWtGeCfHmRocTcyGNYRqMYidnfs1JQPijqQvqV5SLygC5ynxZH3zED5Rr9fPAW \
@@ -73,3 +73,4 @@ MIT - Free and Open Source Software
 ---
 
 *"Do you feel lucky? Well, we ARE lucky!"* - 2 blocks and counting! 🎲
+
